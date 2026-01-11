@@ -1,0 +1,100 @@
+{
+  "name": "AI Inbox Triage Demo",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "path": "inbox-triage-demo",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "2",
+      "name": "AI Classifier",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "operation": "chat",
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are an assistant classifying internal business requests."
+          },
+          {
+            "role": "user",
+            "content": "Classify the following request into JSON:\n\n{text}\n\nReturn only JSON like:\n{\"category\":\"Finance|HR|Tech|Marketing|Operations|General\",\"priority\":\"High|Medium|Low\"}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3",
+      "name": "Parse JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [800, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const output = JSON.parse($json.choices[0].message.content);\nreturn [{ ...$json, ...output }];"
+      }
+    },
+    {
+      "id": "4",
+      "name": "If High Priority",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.priority}}",
+              "operation": "equals",
+              "value2": "High"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Set Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1400, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "Request classified and ready for routing"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "AI Classifier", "type": "main" }]]
+    },
+    "AI Classifier": {
+      "main": [[{ "node": "Parse JSON", "type": "main" }]]
+    },
+    "Parse JSON": {
+      "main": [[{ "node": "If High Priority", "type": "main" }]]
+    },
+    "If High Priority": {
+      "main": [
+        [{ "node": "Set Result", "type": "main" }],
+        []
+      ]
+    }
+  }
+}
