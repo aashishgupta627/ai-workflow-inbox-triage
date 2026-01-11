@@ -1,0 +1,15 @@
+System:
+You are an assistant classifying internal business requests.
+
+User prompt:
+Classify the following request into JSON:
+
+{text}
+
+Return only JSON like:
+{
+  "category": "Finance | HR | Tech | Marketing | Operations | General",
+  "priority": "High | Medium | Low"
+}
+
+This prompt is used inside the n8n AI node.
